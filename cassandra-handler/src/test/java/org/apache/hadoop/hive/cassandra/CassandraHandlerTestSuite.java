@@ -5,8 +5,8 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        TestCassandraProxyClient.class,
-        CassandraPushdownPredicateTest.class,
-        CassandraClientHolderTest.class})
+        //TestCassandraProxyClient.class,
+        CassandraPushdownPredicateTest.class})
+        //CassandraClientHolderTest.class})
 public class CassandraHandlerTestSuite {
 }
