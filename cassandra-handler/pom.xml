@@ -5,6 +5,12 @@
     <artifactId>hive-cassandra</artifactId>
     <version>1.2.6</version>
 
+    <properties>
+        <hector-om-version>3.1-09</hector-om-version>
+        <hector-version>1.1-4</hector-version>
+        <hector-test-version>1.1-4</hector-test-version>
+    </properties>
+
     <repositories>
         <repository>
             <id>apache-repository</id>
@@ -164,38 +170,38 @@
             <scope>provided</scope>
         </dependency>
 
-
         <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>0.90.3</version>
-            <type>jar</type>
-            <scope>provided</scope>
+            <groupId>org.hectorclient</groupId>
+            <artifactId>hector-core</artifactId>
+            <version>${hector-version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.thrift</groupId>
-                    <artifactId>thrift</artifactId>
+                    <groupId>org.apache.cassandra</groupId>
+                    <artifactId>cassandra-thrift</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>commons-lang</groupId>
+                    <artifactId>commons-lang</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr-runtime</artifactId>
-            <version>3.2</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netflix.astyanax</groupId>
-            <artifactId>astyanax-entity-mapper</artifactId>
-            <version>1.56.48</version>
-            <scope>provided</scope>
+            <groupId>org.hectorclient</groupId>
+            <artifactId>hector-test</artifactId>
+            <version>${hector-test-version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>org.apache.thrift</groupId>
-                    <artifactId>thrift</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.apache.cassandra</groupId>
                     <artifactId>cassandra-all</artifactId>
@@ -204,20 +210,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netflix.astyanax</groupId>
-            <artifactId>astyanax-thrift</artifactId>
-            <version>1.56.48</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.thrift</groupId>
-                    <artifactId>thrift</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.cassandra</groupId>
-                    <artifactId>cassandra-all</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.hectorclient</groupId>
+            <artifactId>hector-object-mapper</artifactId>
+            <version>${hector-om-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>javax.persistence</artifactId>
+            <version>2.0.3</version>
         </dependency>
 
     </dependencies>

@@ -13,11 +13,17 @@ import com.netflix.astyanax.impl.AstyanaxConfigurationImpl;
 import com.netflix.astyanax.model.ConsistencyLevel;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 import com.tuplejump.hive.metastore.model.*;
+import me.prettyprint.cassandra.service.CassandraHostConfigurator;
+import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.Keyspace;
+import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hom.EntityManagerImpl;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.RawStore;
 import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.*;
 import org.apache.hadoop.hive.metastore.model.*;
+import org.osgi.service.jpa.EntityManagerFactoryBuilder;
 
 import javax.persistence.PersistenceException;
 import java.util.*;
@@ -33,8 +39,8 @@ import java.util.regex.Pattern;
 public class CasMetastore implements RawStore {
 
     private static final Logger log = Logger.getLogger(CasMetastore.class.getCanonicalName());
-    private static final String CONF_CAS_PORT = "metastore.cassandra.port";
-    private static final String CONF_CAS_HOST = "metastore.cassandra.host";
+    private static final String CONF_CAS_DEF_PORT = "metastore.cassandra.default.port";
+    private static final String CONF_CAS_HOSTS = "metastore.cassandra.hosts";
     private static final String CONF_CAS_METASTORE_KS = "metastore.cassandra.metastoreks";
     private static final String CONF_CAS_CON_PER_HOST = "metastore.cassandra.max_connections_per_host";
     private static final String CONF_CAS_REPLICATION = "metastore.cassandra.replication_factor";
@@ -42,181 +48,36 @@ public class CasMetastore implements RawStore {
     private static final String CONF_CAS_READ_CONSISTENCY = "metastore.cassandra.read_consistency";
     private static final String CONF_CAS_WRITE_CONSISTENCY = "metastore.cassandra.write_consistency";
     public static final String GLOBAL_OBJECT_NAME = "GLOBAL";
+    private static final String CONF_CAS_CLUSTER_NAME = "metstore.cassandra.cluster_name";
 
     private static Lock confLock = new ReentrantLock();
-    private static boolean isStaticInitialized = false;
+    private static boolean isInitialized = false;
     private Configuration conf;
 
-    private static AstyanaxContext<Keyspace> systemKs;
-    private static AstyanaxContext<Keyspace> metastoreKs;
+    private Cluster cluster = null;
 
-
-    private DefaultEntityManager<CDatabase, String> cdbEm;
-    private DefaultEntityManager<CType, String> cTypeEm;
-    private DefaultEntityManager<CTable, String> cTableEm;
-    private DefaultEntityManager<CPartition, String> cPartEm;
-    private DefaultEntityManager<CIndex, String> cIndexEm;
-    private DefaultEntityManager<CRole, String> cRoleEm;
-    private DefaultEntityManager<CPrincipal, String> cPrincipalEm;
+    private EntityManagerImpl entityManager;
 
     @Override
     public void setConf(Configuration entries) {
-        conf = entries;
+        this.conf = entries;
         confLock.lock();
-        try {
-            if (!isStaticInitialized) {
-                //Do everything else
+        if (!isInitialized) {
+            String casHosts = conf.get(CONF_CAS_HOSTS, "localhost");
+            int casPort = conf.getInt(CONF_CAS_DEF_PORT, 9160);
+            CassandraHostConfigurator chc = new CassandraHostConfigurator(casHosts);
+            chc.setPort(casPort);
+            String clusterUrl = String.format("%s.:%s", chc);
+            cluster = HFactory.getOrCreateCluster(conf.get(CONF_CAS_CLUSTER_NAME, "Test Cluster"), clusterUrl);
+            String hiveMetastore = conf.get(CONF_CAS_METASTORE_KS, "HiveMetastore");
+            Keyspace mks = HFactory.createKeyspace(hiveMetastore, cluster);
 
-            /* Initialize System Keyspace */
-                systemKs = getKeyspaceAstyanaxContext("system", entries);
-                systemKs.start();
+            entityManager = new EntityManagerImpl(mks, "com.tuplejump.hive.metastore.model");
 
-            /* Initialize Metastore Keyspace connection */
-                metastoreKs = getKeyspaceAstyanaxContext(entries.get(CONF_CAS_METASTORE_KS, "tj_metastore"), entries);
-                metastoreKs.start();
 
-                //TODO: Should get read/write consistency from configuration
-                initializeEntityManagers();
-
-                try {
-                    metastoreKs.getClient().describeKeyspace();
-                } catch (BadRequestException bre) {
-                    try {
-                        log.info("Metastore keyspace doesn't exist. Creating one now!");
-                        createMSKeyspace(entries);
-                        cdbEm.createStorage(null);
-                        cTableEm.createStorage(null);
-                        cTypeEm.createStorage(null);
-                        cPartEm.createStorage(null);
-                        cIndexEm.createStorage(null);
-                        cRoleEm.createStorage(null);
-                        cPrincipalEm.createStorage(null);
-
-                    } catch (ConnectionException e) {
-                        throw new RuntimeException(e);
-                    } catch (PersistenceException pe) {
-                        throw new RuntimeException(pe);
-                    }
-                } catch (ConnectionException e) {
-                    throw new RuntimeException(e);
-                }
-
-                isStaticInitialized = true;
-            } else {
-                initializeEntityManagers();
-            }
-        } finally {
-            confLock.unlock();
+            isInitialized = true;
         }
-    }
-
-    private void initializeEntityManagers() {
-        cdbEm = new DefaultEntityManager
-                .Builder<CDatabase, String>()
-                .withEntityType(CDatabase.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-        cTypeEm = new DefaultEntityManager
-                .Builder<CType, String>()
-                .withEntityType(CType.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-        cTableEm = new DefaultEntityManager
-                .Builder<CTable, String>()
-                .withEntityType(CTable.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-
-        cPartEm = new DefaultEntityManager
-                .Builder<CPartition, String>()
-                .withEntityType(CPartition.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-
-        cIndexEm = new DefaultEntityManager
-                .Builder<CIndex, String>()
-                .withEntityType(CIndex.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-        cRoleEm = new DefaultEntityManager
-                .Builder<CRole, String>()
-                .withEntityType(CRole.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-        cPrincipalEm = new DefaultEntityManager
-                .Builder<CPrincipal, String>()
-                .withEntityType(CPrincipal.class)
-                .withKeyspace(metastoreKs.getClient())
-                .withAutoCommit(true)
-                .withReadConsistency(ConsistencyLevel.CL_QUORUM)
-                .withWriteConsistency(ConsistencyLevel.CL_QUORUM)
-                .build();
-
-    }
-
-    private void createMSKeyspace(Configuration entries) throws ConnectionException {
-        String sclass = entries.get(CONF_CAS_REPLICATION_STRATEGY, "SimpleStrategy");
-        int repFactor = entries.getInt(CONF_CAS_REPLICATION, 1);
-        Map<String, Object> sopts = ImmutableMap.<String, Object>builder().put(
-                "replication_factor", repFactor + ""
-        )
-                .build();
-
-        Map<String, Object> ksopts = ImmutableMap.<String, Object>builder()
-                .put("strategy_options", sopts)
-                .put("strategy_class", sclass)
-                .build();
-
-        metastoreKs.getClient().createKeyspace(ksopts);
-
-
-    }
-
-    private AstyanaxContext<Keyspace> getKeyspaceAstyanaxContext(String ksname, Configuration entries) {
-
-        int casPort = entries.getInt(CONF_CAS_PORT, 9160);
-
-        return new AstyanaxContext.Builder()
-                .forKeyspace(ksname)
-                .withAstyanaxConfiguration(
-
-                        new AstyanaxConfigurationImpl()
-                                .setDiscoveryType(NodeDiscoveryType.RING_DESCRIBE)
-                                .setCqlVersion("3.0.0")
-                                .setTargetCassandraVersion("1.2")
-                )
-                .withConnectionPoolConfiguration(
-                        new ConnectionPoolConfigurationImpl(ksname + "KeyPool")
-                                .setPort(casPort)
-                                .setMaxConnsPerHost(entries.getInt(CONF_CAS_CON_PER_HOST, 5))
-                                .setSeeds(entries.get(CONF_CAS_HOST, "127.0.0.1") + ":" + casPort)
-                )
-                .withConnectionPoolMonitor(new CountingConnectionPoolMonitor())
-                .buildKeyspace(ThriftFamilyFactory.getInstance());
+        confLock.unlock();
     }
 
     @Override
@@ -227,8 +88,9 @@ public class CasMetastore implements RawStore {
 
     @Override
     public void shutdown() {
-        systemKs.shutdown();
-        metastoreKs.shutdown();
+        if (cluster != null) {
+            cluster.getConnectionManager().shutdown();
+        }
     }
 
     @Override
@@ -259,12 +121,12 @@ public class CasMetastore implements RawStore {
                     database.getLocationUri(),
                     database.getParameters());
 
-            cdbEm.put(db);
+            entityManager.save(db);
         }
     }
 
     private CDatabase getCDatabase(String s) throws NoSuchObjectException {
-        CDatabase cDatabase = cdbEm.get(s);
+        CDatabase cDatabase = entityManager.get(s);
         if (cDatabase != null) {
             return cDatabase;
         } else {
@@ -287,7 +149,7 @@ public class CasMetastore implements RawStore {
     public boolean dropDatabase(String s) throws NoSuchObjectException, MetaException {
         CDatabase db = getCDatabase(s);
         try {
-            cdbEm.delete(s);
+            entityManager.delete(s);
         } catch (PersistenceException pe) {
             return false;
         }
@@ -299,7 +161,7 @@ public class CasMetastore implements RawStore {
         CDatabase db = getCDatabase(s);
         try {
             db.setParameters(database.getParameters());
-            cdbEm.put(db);
+            entityManager.save(db);
         } catch (PersistenceException pe) {
             log.log(Level.SEVERE, "Eror altering table: ", pe);
             return false;
@@ -317,7 +179,7 @@ public class CasMetastore implements RawStore {
         }
 
         //TODO: Optimize using Database name index
-        List<CDatabase> dbs = cdbEm.getAll();
+        List<CDatabase> dbs = entityManager.getAll();
         List<String> dbNames = new ArrayList<String>();
 
         for (CDatabase db : dbs) {
@@ -333,7 +195,7 @@ public class CasMetastore implements RawStore {
 
     @Override
     public List<String> getAllDatabases() throws MetaException {
-        List<CDatabase> dbs = cdbEm.getAll();
+        List<CDatabase> dbs = entityManager.getAll();
         List<String> dbNames = new ArrayList<String>();
 
         for (CDatabase cdb : dbs) {
@@ -348,7 +210,7 @@ public class CasMetastore implements RawStore {
         CType ct = new CType(type);
 
         try {
-            cTypeEm.put(ct);
+            entityManager.save(ct);
             return true;
         } catch (Exception ex) {
             log.log(Level.SEVERE, "Error creating type: " + type.getName(), ex);
@@ -358,7 +220,7 @@ public class CasMetastore implements RawStore {
 
     @Override
     public Type getType(String s) {
-        CType ct = cTypeEm.get(s);
+        CType ct = entityManager.get(s);
 
         if (ct == null) {
             return null;
@@ -369,9 +231,9 @@ public class CasMetastore implements RawStore {
 
     @Override
     public boolean dropType(String s) {
-        CType ct = cTypeEm.get(s);
+        CType ct = entityManager.get(s);
         if (ct != null) {
-            cTypeEm.delete(s);
+            entityManager.delete(s);
         }
         return true;
     }
@@ -393,8 +255,8 @@ public class CasMetastore implements RawStore {
             cdb.addTable(table.getTableName());
             CTable ct = new CTable(table);
 
-            cdbEm.put(cdb);
-            cTableEm.put(ct);
+            entityManager.save(cdb);
+            cTableEm.save(ct);
 
         } catch (NoSuchObjectException e) {
             throw new InvalidObjectException(e.getMessage());
@@ -404,12 +266,12 @@ public class CasMetastore implements RawStore {
 
     @Override
     public boolean dropTable(String dbName, String tableName) throws MetaException {
-        CDatabase cdb = cdbEm.get(dbName);
+        CDatabase cdb = entityManager.get(dbName);
         String tableId = getTableKey(dbName, tableName);
         CTable cTable = cTableEm.get(tableId);
         if (cdb != null) {
             cdb.getTables().remove(tableName);
-            cdbEm.put(cdb);
+            entityManager.save(cdb);
         }
         if (cTable != null) {
             cTableEm.delete(tableId);
@@ -467,7 +329,7 @@ public class CasMetastore implements RawStore {
 
             oldt.setPartitionKeys(cols);
 
-            cTableEm.put(oldt);
+            cTableEm.save(oldt);
 
         } catch (NoSuchObjectException ex) {
             throw new MetaException(ex.getMessage());
@@ -485,7 +347,7 @@ public class CasMetastore implements RawStore {
 
         List<String> tNames = new ArrayList<String>();
         //TODO: Optimize using Table name index
-        CDatabase db = cdbEm.get(dbname);
+        CDatabase db = entityManager.get(dbname);
         if (db == null) {
             throw new MetaException("Database <" + dbname + "> does not exist!");
         } else {
@@ -525,7 +387,7 @@ public class CasMetastore implements RawStore {
 
     @Override
     public List<String> getAllTables(String dbname) throws MetaException {
-        CDatabase db = cdbEm.get(dbname);
+        CDatabase db = entityManager.get(dbname);
         if (db == null) {
             throw new MetaException("Database <" + dbname + "> does not exist!");
         } else {
@@ -564,8 +426,8 @@ public class CasMetastore implements RawStore {
             CPartition cp = new CPartition(partName, partition);
             ctb.addPartition(pn);
 
-            cPartEm.put(cp);
-            cTableEm.put(ctb);
+            cPartEm.save(cp);
+            cTableEm.save(ctb);
         } catch (NoSuchObjectException e) {
             throw new MetaException("Table <" + dbName + "> in database <" + tableName + "> does not exist!");
         }
@@ -625,7 +487,7 @@ public class CasMetastore implements RawStore {
 
             ctb.removePartition(cp.getPartitionName());
 
-            cTableEm.put(ctb);
+            cTableEm.save(ctb);
             cPartEm.delete(buildPartitionId(dbName, tableName, cp.getPartitionName()));
             return true;
         } catch (NoSuchObjectException e) {
@@ -758,7 +620,7 @@ public class CasMetastore implements RawStore {
             CPartition cp = fetchCPartitionByName(dbName, tableName, getPartitionStr(ctb, part));
             cp.addEvent(new CPartition.CPartitionEvent(System.currentTimeMillis(), partitionEventType.getValue()));
 
-            cPartEm.put(cp);
+            cPartEm.save(cp);
             return ctb.toTable();
         } catch (NoSuchObjectException e) {
             UnknownPartitionException upe = new UnknownPartitionException(e.getMessage());
@@ -808,9 +670,9 @@ public class CasMetastore implements RawStore {
             CTable ctb = getCTable(index.getDbName(), index.getOrigTableName());
             ctb.addIndex(index.getIndexName());
 
-            cIndexEm.put(new CIndex(buildIndexId(index.getDbName(),
+            cIndexEm.save(new CIndex(buildIndexId(index.getDbName(),
                     index.getOrigTableName(), index.getIndexName()), index));
-            cTableEm.put(ctb);
+            cTableEm.save(ctb);
 
             return true;
         } catch (NoSuchObjectException e) {
@@ -857,7 +719,7 @@ public class CasMetastore implements RawStore {
         CTable ctb = checkIndexEntry(dbName, tableName, indexName);
         ctb.removeIndex(indexName);
         CIndex ci = getCIndex(dbName, tableName, indexName);
-        cTableEm.put(ctb);
+        cTableEm.save(ctb);
         cIndexEm.delete(ci.getIndexId());
         return true;
     }
@@ -894,7 +756,7 @@ public class CasMetastore implements RawStore {
             throws InvalidObjectException, MetaException {
         CIndex oldi = getCIndex(dbName, tableName, indexName);
         oldi.setParameters(index.getParameters());
-        cIndexEm.put(oldi);
+        cIndexEm.save(oldi);
     }
 
     @Override
@@ -904,7 +766,7 @@ public class CasMetastore implements RawStore {
         if (cRoleEm.get(roleName) != null) {
             throw new InvalidObjectException("Role <" + roleName + "> already exists.");
         }
-        cRoleEm.put(cr);
+        cRoleEm.save(cr);
         return true;
     }
 
@@ -987,8 +849,8 @@ public class CasMetastore implements RawStore {
         cp.addRole(role.getRoleName(), now, grantor, grantorType.getValue(), grantOption);
         cr.addPrincipal(principalId);
 
-        cPrincipalEm.put(cp);
-        cRoleEm.put(cr);
+        cPrincipalEm.save(cp);
+        cRoleEm.save(cr);
         return true;
     }
 
@@ -1035,7 +897,7 @@ public class CasMetastore implements RawStore {
         Map<String, List<PrivilegeGrantInfo>> ret = new HashMap<String, List<PrivilegeGrantInfo>>();
         List<CPrincipal> principals = getCPrincipals(pnames, principalType);
         for (CPrincipal cp : principals) {
-            ret.put(cp.getPrincipalName(), getPrivilegeGrantInfos(cp, objectType, object));
+            ret.save(cp.getPrincipalName(), getPrivilegeGrantInfos(cp, objectType, object));
         }
         return ret;
     }
@@ -1067,7 +929,7 @@ public class CasMetastore implements RawStore {
 
             if (userName != null) {
                 Map<String, List<PrivilegeGrantInfo>> dbUserPriv = new HashMap<String, List<PrivilegeGrantInfo>>();
-                dbUserPriv.put(userName, getPrivilegeGrantInfos(userName, PrincipalType.USER.getValue(),
+                dbUserPriv.save(userName, getPrivilegeGrantInfos(userName, PrincipalType.USER.getValue(),
                         objectType, objectName));
                 ret.setUserPrivileges(dbUserPriv);
             }
@@ -1259,8 +1121,8 @@ public class CasMetastore implements RawStore {
             morders.add(new MOrder(cOrder.getCol(), cOrder.getOrder()));
         }
 
-        return new MStorageDescriptor(mcd, csd.getLocation(), csd.getInputFormat(),
-                csd.getOutputFormat(), csd.isCompressed(), csd.getNumBuckets(), mserde, csd.getBucketCols(),
+        return new MStorageDescriptor(mcd, csd.getLocation(), csd.getI.saveFormat(),
+                csd.getOu.saveFormat(), csd.isCompressed(), csd.getNumBuckets(), mserde, csd.getBucketCols(),
                 morders, csd.getParameters());
     }
 
@@ -1387,7 +1249,7 @@ public class CasMetastore implements RawStore {
             }
 
             cp.addPrivilege(objectType.getValue(), objectName, privilegeStr, now, grantor, grantorType, grantOption);
-            cPrincipalEm.put(cp);
+            cPrincipalEm.save(cp);
         }
 
         return true;
@@ -1445,7 +1307,7 @@ public class CasMetastore implements RawStore {
             int objectType = hiveObject.getObjectType().getValue();
             cp.removePrivilege(objectType, objName, privilegeStr);
 
-            cPrincipalEm.put(cp);
+            cPrincipalEm.save(cp);
         }
         return true;
     }
