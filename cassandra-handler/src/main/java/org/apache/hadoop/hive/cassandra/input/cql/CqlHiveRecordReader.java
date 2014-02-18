@@ -110,6 +110,8 @@ public class CqlHiveRecordReader extends RecordReader<MapWritableComparable, Map
   }
 
   private BytesWritable convertByteBuffer(ByteBuffer val) {
+    if (val == null)
+        return new BytesWritable(new byte[0]);
     return new BytesWritable(ByteBufferUtil.getArray(val));
   }
 
