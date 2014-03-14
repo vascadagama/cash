@@ -237,7 +237,6 @@ public class CqlManager {
       cch.getClient().set_keyspace(keyspace);
         Properties properties = MetaStoreUtils.getSchema(tbl.getSd(), tbl.getSd(), tbl.getParameters(), tbl.getDbName(), tbl.getTableName(), tbl.getPartitionKeys());
 
-
         String columnsStr = (String) properties.get(Constants.META_TABLE_COLUMNS);
         String columnTypesStr = (String) properties.get(Constants.META_TABLE_COLUMN_TYPES);
 
