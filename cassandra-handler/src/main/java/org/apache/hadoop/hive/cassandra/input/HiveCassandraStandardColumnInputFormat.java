@@ -59,7 +59,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings("deprecation")
 public class HiveCassandraStandardColumnInputFormat extends InputFormat<BytesWritable, MapWritable>
         implements org.apache.hadoop.mapred.InputFormat<BytesWritable, MapWritable> {
 

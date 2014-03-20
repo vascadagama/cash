@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-@SuppressWarnings("deprecation")
 public class HiveCassandraOutputFormat implements HiveOutputFormat<Text, CassandraPut>,
     OutputFormat<Text, CassandraPut> {
 

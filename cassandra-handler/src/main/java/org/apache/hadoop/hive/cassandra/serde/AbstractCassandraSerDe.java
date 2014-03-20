@@ -19,6 +19,7 @@
 package org.apache.hadoop.hive.cassandra.serde;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
@@ -154,7 +155,7 @@ public abstract class AbstractCassandraSerDe implements SerDe{
         if (result == null) {
 
             result = tbl
-                    .getProperty(org.apache.hadoop.hive.metastore.api.Constants.META_TABLE_NAME);
+                    .getProperty(hive_metastoreConstants.META_TABLE_NAME);
 
             if (result == null) {
                 throw new SerDeException("CassandraKeyspace not defined" + tbl.toString());
@@ -182,7 +183,7 @@ public abstract class AbstractCassandraSerDe implements SerDe{
         if (result == null) {
 
             result = tbl
-                    .getProperty(org.apache.hadoop.hive.metastore.api.Constants.META_TABLE_NAME);
+                    .getProperty(hive_metastoreConstants.META_TABLE_NAME);
 
             if (result == null) {
                 throw new SerDeException("CassandraColumnFamily not defined" + tbl.toString());

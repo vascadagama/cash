@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-@SuppressWarnings("deprecation")
 public class HiveCqlOutputFormat implements HiveOutputFormat<Text, CqlPut>,
         OutputFormat<Text, CqlPut> {
 

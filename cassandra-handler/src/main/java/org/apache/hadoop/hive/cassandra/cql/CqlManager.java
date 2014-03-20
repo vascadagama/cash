@@ -18,7 +18,20 @@
 
 package org.apache.hadoop.hive.cassandra.cql;
 
-import org.apache.cassandra.thrift.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.cassandra.thrift.Compression;
+import org.apache.cassandra.thrift.ConsistencyLevel;
+import org.apache.cassandra.thrift.CqlResult;
+import org.apache.cassandra.thrift.CqlRow;
+import org.apache.cassandra.thrift.InvalidRequestException;
+import org.apache.cassandra.thrift.SchemaDisagreementException;
+import org.apache.cassandra.thrift.TimedOutException;
+import org.apache.cassandra.thrift.UnavailableException;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.hadoop.hive.cassandra.CassandraClientHolder;
 import org.apache.hadoop.hive.cassandra.CassandraException;
@@ -26,14 +39,13 @@ import org.apache.hadoop.hive.cassandra.CassandraProxyClient;
 import org.apache.hadoop.hive.cassandra.serde.AbstractCassandraSerDe;
 import org.apache.hadoop.hive.cassandra.serde.cql.CqlSerDe;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
-import org.apache.hadoop.hive.metastore.api.Constants;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
  * A class to handle the transaction to cassandra backend database.
@@ -46,11 +58,11 @@ public class CqlManager {
     final static Map<String, String> hiveTypeToCqlType = new HashMap<String, String>();
 
     static{
-        hiveTypeToCqlType.put(org.apache.hadoop.hive.serde.Constants.STRING_TYPE_NAME, "text");
-        hiveTypeToCqlType.put(org.apache.hadoop.hive.serde.Constants.INT_TYPE_NAME, "int");
-        hiveTypeToCqlType.put(org.apache.hadoop.hive.serde.Constants.BOOLEAN_TYPE_NAME, "boolean");
-        hiveTypeToCqlType.put(org.apache.hadoop.hive.serde.Constants.DOUBLE_TYPE_NAME, "double");
-        hiveTypeToCqlType.put(org.apache.hadoop.hive.serde.Constants.FLOAT_TYPE_NAME, "float");
+        hiveTypeToCqlType.put(serdeConstants.STRING_TYPE_NAME, "text");
+        hiveTypeToCqlType.put(serdeConstants.INT_TYPE_NAME, "int");
+        hiveTypeToCqlType.put(serdeConstants.BOOLEAN_TYPE_NAME, "boolean");
+        hiveTypeToCqlType.put(serdeConstants.DOUBLE_TYPE_NAME, "double");
+        hiveTypeToCqlType.put(serdeConstants.FLOAT_TYPE_NAME, "float");
     }
 
   //Cassandra Host Name
@@ -237,8 +249,8 @@ public class CqlManager {
       cch.getClient().set_keyspace(keyspace);
         Properties properties = MetaStoreUtils.getSchema(tbl.getSd(), tbl.getSd(), tbl.getParameters(), tbl.getDbName(), tbl.getTableName(), tbl.getPartitionKeys());
 
-        String columnsStr = (String) properties.get(Constants.META_TABLE_COLUMNS);
-        String columnTypesStr = (String) properties.get(Constants.META_TABLE_COLUMN_TYPES);
+        String columnsStr = (String) properties.get(hive_metastoreConstants.META_TABLE_COLUMNS);
+        String columnTypesStr = (String) properties.get(hive_metastoreConstants.META_TABLE_COLUMN_TYPES);
 
         String[] columnNames = columnsStr.split(",");
         String[] columnTypes = columnTypesStr.split(":");
