@@ -62,7 +62,7 @@ import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.Task;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.exec.Utilities.StreamPrinter;
-import org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat;
+import org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat;
 import org.apache.hadoop.hive.ql.lockmgr.zookeeper.ZooKeeperHiveLockManager;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.Table;
@@ -72,7 +72,7 @@ import org.apache.hadoop.hive.ql.parse.ParseException;
 import org.apache.hadoop.hive.ql.parse.SemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.session.SessionState;
-import org.apache.hadoop.hive.serde.Constants;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.thrift.ThriftDeserializer;
 import org.apache.hadoop.hive.serde2.thrift.test.Complex;
 import org.apache.hadoop.hive.shims.HadoopShims;
@@ -473,7 +473,7 @@ public class QTestUtil {
         part_cols.add("ds");
         part_cols.add("hr");
         db.createTable("srcpart", cols, part_cols, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
 
         Path fpath;
         HashMap<String, String> part_spec = new HashMap<String, String>();
@@ -515,7 +515,7 @@ public class QTestUtil {
 
         for (String tname : new String[] {"src", "src1"}) {
             db.createTable(tname, cols, null, TextInputFormat.class,
-                    IgnoreKeyTextOutputFormat.class);
+                    HiveIgnoreKeyTextOutputFormat.class);
         }
         db.createTable("src_sequencefile", cols, null,
                 SequenceFileInputFormat.class, SequenceFileOutputFormat.class);
@@ -524,16 +524,16 @@ public class QTestUtil {
         srcThrift.setInputFormatClass(SequenceFileInputFormat.class.getName());
         srcThrift.setOutputFormatClass(SequenceFileOutputFormat.class.getName());
         srcThrift.setSerializationLib(ThriftDeserializer.class.getName());
-        srcThrift.setSerdeParam(Constants.SERIALIZATION_CLASS, Complex.class
+        srcThrift.setSerdeParam(serdeConstants.SERIALIZATION_CLASS, Complex.class
                 .getName());
-        srcThrift.setSerdeParam(Constants.SERIALIZATION_FORMAT,
+        srcThrift.setSerdeParam(serdeConstants.SERIALIZATION_FORMAT,
                 TBinaryProtocol.class.getName());
         db.createTable(srcThrift);
 
         LinkedList<String> json_cols = new LinkedList<String>();
         json_cols.add("json");
         db.createTable("src_json", json_cols, null, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
 
         // load the input data into the src table
         fpath = new Path(testFiles, "kv1.txt");
@@ -589,12 +589,12 @@ public class QTestUtil {
         part_cols.add("hr");
 
         db.createTable("dest1", cols, null, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
         db.createTable("dest2", cols, null, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
 
         db.createTable("dest3", cols, part_cols, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
         Table dest3 = db.getTable("dest3");
 
         HashMap<String, String> part_spec = new HashMap<String, String>();
@@ -603,7 +603,7 @@ public class QTestUtil {
         db.createPartition(dest3, part_spec);
 
         db.createTable("dest4", cols, null, TextInputFormat.class,
-                IgnoreKeyTextOutputFormat.class);
+                HiveIgnoreKeyTextOutputFormat.class);
         db.createTable("dest4_sequencefile", cols, null,
                 SequenceFileInputFormat.class, SequenceFileOutputFormat.class);
     }

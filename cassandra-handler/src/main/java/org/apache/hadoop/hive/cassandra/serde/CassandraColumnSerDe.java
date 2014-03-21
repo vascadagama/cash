@@ -23,16 +23,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.db.marshal.AbstractType;
 import org.apache.cassandra.db.marshal.BytesType;
 import org.apache.cassandra.db.marshal.TypeParser;
+import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.exceptions.SyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.cassandra.input.LazyCassandraRow;
 import org.apache.hadoop.hive.cassandra.output.CassandraPut;
-import org.apache.hadoop.hive.serde.Constants;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe;
 import org.apache.hadoop.hive.serde2.lazy.objectinspector.LazySimpleStructObjectInspector;
@@ -157,7 +157,7 @@ public class CassandraColumnSerDe extends AbstractCassandraSerDe {
                 TypeInfo typeInfo = serdeParams.getColumnTypes().get(i);
                 if ((typeInfo.getCategory() != Category.MAP) ||
                         (((MapTypeInfo) typeInfo).getMapKeyTypeInfo().getTypeName()
-                                != Constants.STRING_TYPE_NAME)) {
+                                != serdeConstants.STRING_TYPE_NAME)) {
 
                     throw new SerDeException(
                             serdeName + ": Cassandra column family '"
@@ -372,7 +372,7 @@ public class CassandraColumnSerDe extends AbstractCassandraSerDe {
         if (prop != null) {
             return parseColumnMapping(prop);
         } else {
-            String tblColumnStr = tbl.getProperty(Constants.LIST_COLUMNS);
+            String tblColumnStr = tbl.getProperty(serdeConstants.LIST_COLUMNS);
 
             if (tblColumnStr != null) {
                 //auto-create

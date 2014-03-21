@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings("deprecation")
 public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWritable>
         implements org.apache.hadoop.mapred.InputFormat<MapWritableComparable, MapWritable> {
 

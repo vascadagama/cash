@@ -18,6 +18,12 @@
 
 package org.apache.hadoop.hive.cassandra;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 import org.apache.cassandra.thrift.ColumnDef;
 import org.apache.cassandra.thrift.KsDef;
 import org.apache.cassandra.thrift.NotFoundException;
@@ -28,9 +34,9 @@ import org.apache.hadoop.hive.cassandra.serde.AbstractCassandraSerDe;
 import org.apache.hadoop.hive.cassandra.serde.CassandraColumnSerDe;
 import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
-import org.apache.hadoop.hive.metastore.api.Constants;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.hadoop.hive.ql.index.IndexPredicateAnalyzer;
 import org.apache.hadoop.hive.ql.index.IndexSearchCondition;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -39,6 +45,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveStoragePredicateHandler;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
@@ -46,8 +53,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class CassandraStorageHandler
   implements HiveStorageHandler, HiveMetaHook, HiveStoragePredicateHandler {
@@ -63,7 +68,7 @@ public class CassandraStorageHandler
     //Identify Keyspace
     String keyspace = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_KEYSPACE_NAME);
     if (keyspace == null) {
-      keyspace = tableProperties.getProperty(Constants.META_TABLE_DB);
+      keyspace = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_DB);
     }
 
     jobProperties.put(AbstractCassandraSerDe.CASSANDRA_KEYSPACE_NAME, keyspace);
@@ -71,7 +76,7 @@ public class CassandraStorageHandler
     //Identify ColumnFamily
     String columnFamily = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_CF_NAME);
     if (columnFamily == null) {
-      columnFamily = tableProperties.getProperty(Constants.META_TABLE_NAME);
+      columnFamily = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_NAME);
     }
 
     jobProperties.put(AbstractCassandraSerDe.CASSANDRA_CF_NAME, columnFamily);
@@ -81,7 +86,7 @@ public class CassandraStorageHandler
     if(columnInfo == null)
     {
       columnInfo = CassandraColumnSerDe.createColumnMappingString(
-        tableProperties.getProperty(org.apache.hadoop.hive.serde.Constants.LIST_COLUMNS));
+        tableProperties.getProperty(serdeConstants.LIST_COLUMNS));
     }
     jobProperties.put(AbstractCassandraSerDe.CASSANDRA_COL_MAPPING, columnInfo);
 
