@@ -4,9 +4,9 @@ This handler provides hive support for cassandra.
 
 ## Check out and Installation
 
-check out the project from *https://github.com/milliondreams/hive.git*.
+check out the project from *https://github.com/tuplejump/cash.git*.
 
-    > git clone https://github.com/milliondreams/hive.git
+    > git clone https://github.com/tuplejump/cash.git
 
 Go to branch *cas-support-cql*
 
