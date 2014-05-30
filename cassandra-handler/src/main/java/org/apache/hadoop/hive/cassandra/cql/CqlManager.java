@@ -60,6 +60,9 @@ public class CqlManager {
     static{
         hiveTypeToCqlType.put(serdeConstants.STRING_TYPE_NAME, "text");
         hiveTypeToCqlType.put(serdeConstants.INT_TYPE_NAME, "int");
+        hiveTypeToCqlType.put(serdeConstants.TINYINT_TYPE_NAME, "int");
+        hiveTypeToCqlType.put(serdeConstants.SMALLINT_TYPE_NAME, "int");
+        hiveTypeToCqlType.put(serdeConstants.BIGINT_TYPE_NAME, "bigint");
         hiveTypeToCqlType.put(serdeConstants.BOOLEAN_TYPE_NAME, "boolean");
         hiveTypeToCqlType.put(serdeConstants.DOUBLE_TYPE_NAME, "double");
         hiveTypeToCqlType.put(serdeConstants.FLOAT_TYPE_NAME, "float");
