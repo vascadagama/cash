@@ -13,6 +13,7 @@
 * [Cyril Scetbon](https://github.com/cscetbon)
 * [Brian Mason](https://github.com/bpmason1)
 * [Jim Acona](https://github.com/jancona)
+* [Robbie Strickland](https://github.com/rstrickland)
 
 
 And of course countless others how have contributed to Cassandra, Hadoop and Hive and the Open Source community in general. THansk to each and everyone of you! 
