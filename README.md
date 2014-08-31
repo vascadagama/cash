@@ -1,6 +1,22 @@
 ### Credits
 
-This project is derived from the work done at Riptano (now Datastax [http://www.datastax.com/]) and the original work done by Edward Capriolo (https://www.linkedin.com/in/edwardcapriolo) here [https://issues.apache.org/jira/browse/HIVE-1434]
+1. This project is derived from the work done at Riptano (now [Datastax](http://www.datastax.com/)) 
+
+2. There wouldn't have been anything if not for the original work done by [Edward Capriolo](https://www.linkedin.com/in/edwardcapriolo). Look at the Apache Jira [here](https://issues.apache.org/jira/browse/HIVE-1434)
+
+3. Majority of the cleanup and upgrade to 1.2.x work was done by the wonderful guys (and our development partners) at [Imaginea](http://www.imaginea.com) by [Venkatesh Ragi](https://github.com/venkateshragi)
+
+4. Thanks to all the other contributors -
+
+* [Richard Low](https://github.com/richardalow)
+* [Brian O'Neill](https://github.com/boneill42)
+* [Cyril Scetbon](https://github.com/cscetbon)
+* [Brian Mason](https://github.com/bpmason1)
+* [Jim Acona](https://github.com/jancona)
+
+
+And of course countless others how have contributed to Cassandra, Hadoop and Hive and the Open Source community in general. THansk to each and everyone of you! 
+
 
 
 # hive-cassandra-handler
