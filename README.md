@@ -1,3 +1,8 @@
+### Credits
+
+This project is derived from the work done at Riptano (now Datastax [http://www.datastax.com/]) and the original work done by Edward Capriolo (https://www.linkedin.com/in/edwardcapriolo) here [https://issues.apache.org/jira/browse/HIVE-1434]
+
+
 # hive-cassandra-handler
 
 This handler provides hive support for cassandra.
