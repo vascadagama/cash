@@ -36,7 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.cassandra.CassandraPushdownPredicate;
 import org.apache.hadoop.hive.cassandra.serde.AbstractCassandraSerDe;
 import org.apache.hadoop.hive.cassandra.serde.CassandraColumnSerDe;
-import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.index.IndexPredicateAnalyzer;
 import org.apache.hadoop.hive.ql.index.IndexSearchCondition;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
@@ -282,7 +282,7 @@ public class HiveCassandraStandardColumnInputFormat extends InputFormat<BytesWri
             return null;
         }
 
-        ExprNodeDesc filterExpr = Utilities.deserializeExpression(filterExprSerialized, jobConf);
+        ExprNodeDesc filterExpr = SerializationUtilities.deserializeExpression(filterExprSerialized, jobConf);
         String encodedIndexedColumns = jobConf.get(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS);
         Set<ColumnDef> indexedColumns = CassandraPushdownPredicate.deserializeIndexedColumns(encodedIndexedColumns);
         if (indexedColumns.isEmpty()) {
