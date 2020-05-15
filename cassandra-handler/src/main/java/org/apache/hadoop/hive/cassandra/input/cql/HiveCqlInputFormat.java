@@ -20,8 +20,8 @@ package org.apache.hadoop.hive.cassandra.input.cql;
 
 import org.apache.cassandra.hadoop.ColumnFamilySplit;
 import org.apache.cassandra.hadoop.ConfigHelper;
-import org.apache.cassandra.hadoop.cql3.CqlPagingInputFormat;
-import org.apache.cassandra.hadoop.cql3.CqlPagingRecordReader;
+import org.apache.cassandra.hadoop.cql3.CqlInputFormat;
+import org.apache.cassandra.hadoop.cql3.CqlRecordReader;
 import org.apache.cassandra.thrift.ColumnDef;
 import org.apache.cassandra.thrift.IndexExpression;
 import org.apache.cassandra.thrift.SlicePredicate;
@@ -61,7 +61,7 @@ public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWr
 
   static final Logger LOG = LoggerFactory.getLogger(HiveCqlInputFormat.class);
 
-  private final CqlPagingInputFormat cfif = new CqlPagingInputFormat();
+  private final CqlInputFormat cfif = new CqlInputFormat();
 
   @Override
   public RecordReader<MapWritableComparable, MapWritable> getRecordReader(InputSplit split,
@@ -113,7 +113,7 @@ public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWr
         ConfigHelper.setInputRange(tac.getConfiguration(), indexExpr);
       }
 
-      CqlHiveRecordReader rr = new CqlHiveRecordReader(new CqlPagingRecordReader());
+      CqlHiveRecordReader rr = new CqlHiveRecordReader(new CqlRecordReader());
 
       rr.initialize(cfSplit, tac);
 
@@ -219,7 +219,7 @@ public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWr
           org.apache.hadoop.mapreduce.InputSplit arg0, TaskAttemptContext tac) throws IOException,
           InterruptedException {
 
-    return new CqlHiveRecordReader(new CqlPagingRecordReader());
+    return new CqlHiveRecordReader(new CqlRecordReader());
   }
 
   /**

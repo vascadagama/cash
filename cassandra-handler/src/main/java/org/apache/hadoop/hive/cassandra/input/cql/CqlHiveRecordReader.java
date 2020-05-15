@@ -18,7 +18,7 @@
 
 package org.apache.hadoop.hive.cassandra.input.cql;
 
-import org.apache.cassandra.hadoop.cql3.CqlPagingRecordReader;
+import org.apache.cassandra.hadoop.cql3.CqlRecordReader;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -40,14 +40,14 @@ public class CqlHiveRecordReader extends RecordReader<MapWritableComparable, Map
   static final Logger LOG = LoggerFactory.getLogger(CqlHiveRecordReader.class);
 
   //private final boolean isTransposed;
-  private final CqlPagingRecordReader cfrr;
+  private final CqlRecordReader cfrr;
   private Iterator<Map.Entry<String, ByteBuffer>> columnIterator = null;
   private Map.Entry<String, ByteBuffer> currentEntry;
   //private Iterator<IColumn> subColumnIterator = null;
   private MapWritableComparable currentKey = null;
   private final MapWritable currentValue = new MapWritable();
 
-  public CqlHiveRecordReader(CqlPagingRecordReader cprr) { //, boolean isTransposed) {
+  public CqlHiveRecordReader(CqlRecordReader cprr) { //, boolean isTransposed) {
     this.cfrr = cprr;
     //this.isTransposed = isTransposed;
   }

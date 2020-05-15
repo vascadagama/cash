@@ -24,7 +24,7 @@ import org.apache.cassandra.db.marshal.TypeParser;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.exceptions.SyntaxException;
 import org.apache.cassandra.hadoop.ColumnFamilyInputFormat;
-import org.apache.cassandra.hadoop.ColumnFamilyRecordReader;
+import org.apache.cassandra.hadoop.cql3.CqlRecordReader;
 import org.apache.cassandra.hadoop.ColumnFamilySplit;
 import org.apache.cassandra.hadoop.ConfigHelper;
 import org.apache.cassandra.thrift.ColumnDef;
@@ -150,7 +150,7 @@ public class HiveCassandraStandardColumnInputFormat extends InputFormat<BytesWri
                 ConfigHelper.setInputRange(tac.getConfiguration(), indexExpr);
             }
 
-            CassandraHiveRecordReader rr = new CassandraHiveRecordReader(new ColumnFamilyRecordReader(), isTransposed);
+            CassandraHiveRecordReader rr = new CassandraHiveRecordReader(new CqlRecordReader(), isTransposed);
 
             rr.initialize(cfSplit, tac);
 
@@ -259,7 +259,7 @@ public class HiveCassandraStandardColumnInputFormat extends InputFormat<BytesWri
             org.apache.hadoop.mapreduce.InputSplit arg0, TaskAttemptContext tac) throws IOException,
             InterruptedException {
 
-        return new CassandraHiveRecordReader(new ColumnFamilyRecordReader(), isTransposed);
+        return new CassandraHiveRecordReader(new CqlRecordReader(), isTransposed);
     }
 
     /**

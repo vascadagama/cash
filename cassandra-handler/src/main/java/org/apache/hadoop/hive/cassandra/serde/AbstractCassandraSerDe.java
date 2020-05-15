@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
-public abstract class AbstractCassandraSerDe implements SerDe{
+public abstract class AbstractCassandraSerDe implements AbstractSerDe{
 
     public static final Logger LOG = LoggerFactory.getLogger(AbstractCassandraSerDe.class);
 
@@ -154,7 +154,7 @@ public abstract class AbstractCassandraSerDe implements SerDe{
         if (result == null) {
 
             result = tbl
-                    .getProperty(org.apache.hadoop.hive.metastore.api.Constants.META_TABLE_NAME);
+                    .getProperty(org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_NAME);
 
             if (result == null) {
                 throw new SerDeException("CassandraKeyspace not defined" + tbl.toString());
@@ -182,7 +182,7 @@ public abstract class AbstractCassandraSerDe implements SerDe{
         if (result == null) {
 
             result = tbl
-                    .getProperty(org.apache.hadoop.hive.metastore.api.Constants.META_TABLE_NAME);
+                    .getProperty(org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_NAME);
 
             if (result == null) {
                 throw new SerDeException("CassandraColumnFamily not defined" + tbl.toString());

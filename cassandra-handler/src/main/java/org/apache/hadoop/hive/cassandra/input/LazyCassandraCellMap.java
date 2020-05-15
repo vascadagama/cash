@@ -21,7 +21,7 @@ package org.apache.hadoop.hive.cassandra.input;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.cassandra.hadoop.ColumnFamilyRecordReader;
+import org.apache.cassandra.hadoop.cql3.CqlRecordReader;
 import org.apache.hadoop.hive.serde2.lazy.LazyMap;
 import org.apache.hadoop.hive.serde2.lazy.LazyObject;
 import org.apache.hadoop.hive.serde2.lazy.LazyPrimitive;
@@ -29,14 +29,14 @@ import org.apache.hadoop.hive.serde2.lazy.objectinspector.LazyMapObjectInspector
 
 public class LazyCassandraCellMap extends LazyMap{
 
-  private ColumnFamilyRecordReader rowResult;
+  private CqlRecordReader rowResult;
   private String cassandraColumnFamily;
 
   protected LazyCassandraCellMap(LazyMapObjectInspector oi) {
     super(oi);
   }
 
-  public void init(ColumnFamilyRecordReader rr, String columnFamily) {
+  public void init(CqlRecordReader rr, String columnFamily) {
     rowResult = rr;
     cassandraColumnFamily = columnFamily;
     setParsed(false);
