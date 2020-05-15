@@ -60,7 +60,7 @@ import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.api.Index;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.Task;
-import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hive.common.util.StreamPrinter;
 import org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat;
 import org.apache.hadoop.hive.ql.lockmgr.zookeeper.ZooKeeperHiveLockManager;
@@ -808,8 +808,8 @@ public class QTestUtil {
             outf = new File(outf, tname.concat(".xml"));
 
             FileOutputStream ofs = new FileOutputStream(outf);
-            for (Task<? extends Serializable> plan : tasks) {
-                Utilities.serializeTasks(plan, ofs);
+            for (Object plan : tasks) {
+                SerializationUtilities.serializePlan(plan, ofs);
             }
 
             String[] patterns = new String[] {
